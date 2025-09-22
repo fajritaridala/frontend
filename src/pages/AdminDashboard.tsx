@@ -1,8 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { Card, CardBody, CardHeader, Divider, Button } from '@heroui/react';
+import { Button } from '@heroui/react';
 import { useNavigate } from 'react-router-dom';
 import api from '../utils/api';
 import { TOEFLRegistration } from '../types';
+import { PageHeader } from '../components/ui/PageHeader';
+import { StatCard } from '../components/ui/StatCard';
+import { CardWithHeader } from '../components/ui/Card';
+import { LoadingSpinner } from '../components/ui/LoadingSpinner';
+import { EmptyState } from '../components/ui/EmptyState';
+import { StatusBadge } from '../components/ui/StatusBadge';
 
 const AdminDashboard: React.FC = () => {
   const navigate = useNavigate();
@@ -49,125 +55,136 @@ const AdminDashboard: React.FC = () => {
       title: 'Total Participants',
       value: stats.totalParticipants,
       icon: '👥',
-      color: 'primary',
-      bgColor: 'bg-blue-50',
-      iconColor: 'text-blue-600',
+      color: 'blue' as const,
+      trend: { value: 12, isPositive: true }
     },
     {
       title: 'Completed Tests',
       value: stats.completedTests,
       icon: '✅',
-      color: 'success',
-      bgColor: 'bg-green-50',
-      iconColor: 'text-green-600',
+      color: 'green' as const,
+      trend: { value: 8, isPositive: true }
     },
     {
       title: 'Pending Tests',
       value: stats.pendingTests,
       icon: '⏰',
-      color: 'warning',
-      bgColor: 'bg-yellow-50',
-      iconColor: 'text-yellow-600',
+      color: 'yellow' as const,
+      trend: { value: 3, isPositive: false }
     },
     {
       title: 'Certificates Issued',
       value: stats.certificatesIssued,
       icon: '📄',
-      color: 'secondary',
-      bgColor: 'bg-purple-50',
-      iconColor: 'text-purple-600',
+      color: 'purple' as const,
+      trend: { value: 15, isPositive: true }
     },
   ];
 
   return (
-    <div className="space-y-8">
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Admin Dashboard</h1>
-        <p className="text-gray-600">Manage TOEFL participants and certificates</p>
-      </div>
+    <div className="space-y-6">
+      <PageHeader
+        title="Admin Dashboard"
+        subtitle="Manage TOEFL participants and certificates"
+        breadcrumbs={[
+          { label: 'Home' },
+          { label: 'Dashboard' }
+        ]}
+      />
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         {statCards.map((stat, index) => (
-          <Card key={index} className="card-shadow">
-            <CardBody className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600 mb-1">{stat.title}</p>
-                  <p className="text-3xl font-bold text-gray-900">{stat.value}</p>
-                </div>
-                <div className={`p-3 rounded-full ${stat.bgColor}`}>
-                  <span className="text-2xl">{stat.icon}</span>
-                </div>
-              </div>
-            </CardBody>
-          </Card>
+          <StatCard
+            key={index}
+            title={stat.title}
+            value={stat.value}
+            icon={stat.icon}
+            color={stat.color}
+            trend={stat.trend}
+          />
         ))}
       </div>
 
       {/* Recent Participants */}
-      <Card className="card-shadow">
-        <CardHeader className="flex justify-between items-center px-6 py-4">
-          <div>
-            <h2 className="text-xl font-semibold text-gray-900">Recent Participants</h2>
-            <p className="text-sm text-gray-600">Latest TOEFL test registrations</p>
-          </div>
+      <CardWithHeader
+        title="Recent Participants"
+        subtitle="Latest TOEFL test registrations"
+        headerAction={
           <Button
             color="primary"
             variant="flat"
+            size="sm"
             onPress={() => navigate('/participants')}
           >
             View All →
           </Button>
-        </CardHeader>
-        <Divider />
-        <CardBody className="p-0">
-          {loading ? (
-            <div className="p-6 text-center">
-              <p className="text-gray-600">Loading...</p>
-            </div>
-          ) : recentParticipants.length === 0 ? (
-            <div className="p-6 text-center">
-              <p className="text-gray-600">No participants found</p>
-            </div>
-          ) : (
-            <div className="divide-y divide-gray-200">
-              {recentParticipants.map((participant, index) => (
-                <div key={index} className="p-6 hover:bg-gray-50 transition-colors">
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-2">
-                        <h3 className="font-semibold text-gray-900">{participant.fullName}</h3>
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                          participant.status === 'selesai' 
-                            ? 'bg-green-100 text-green-800' 
-                            : 'bg-yellow-100 text-yellow-800'
-                        }`}>
-                          {participant.status === 'selesai' ? 'Completed' : 'Pending'}
+        }
+      >
+        {loading ? (
+          <LoadingSpinner text="Loading participants..." />
+        ) : recentParticipants.length === 0 ? (
+          <EmptyState
+            icon="👥"
+            title="No participants yet"
+            description="When participants register for TOEFL tests, they will appear here."
+            action={{
+              label: "View All Participants",
+              onClick: () => navigate('/participants')
+            }}
+          />
+        ) : (
+          <div className="space-y-4">
+            {recentParticipants.map((participant, index) => (
+              <div key={index} className="p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
+                <div className="flex items-center justify-between">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+                        <span className="text-white font-semibold text-sm">
+                          {participant.fullName.charAt(0)}
                         </span>
                       </div>
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-sm text-gray-600">
-                        <p><span className="font-medium">NIM:</span> {participant.nim}</p>
-                        <p><span className="font-medium">Major:</span> {participant.major}</p>
-                        <p><span className="font-medium">Session:</span> {participant.sessionTest}</p>
+                      <div>
+                        <h3 className="font-semibold text-gray-900">{participant.fullName}</h3>
+                        <p className="text-sm text-gray-600">{participant.email}</p>
+                      </div>
+                      <StatusBadge 
+                        status={participant.status === 'selesai' ? 'completed' : 'pending'}
+                        size="sm"
+                      />
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm text-gray-600">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium">🎓 NIM:</span>
+                        <span className="font-mono">{participant.nim}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium">📚 Major:</span>
+                        <span>{participant.major}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium">📅 Session:</span>
+                        <span>{participant.sessionTest}</span>
                       </div>
                     </div>
-                    {participant.status === 'belum selesai' && (
-                      <Button
-                        color="primary"
-                        size="sm"
-                        onPress={() => navigate(`/input-scores/${participant.address}`)}
-                      >
-                        Input Scores
-                      </Button>
-                    )}
                   </div>
+                  {participant.status === 'belum selesai' && (
+                    <Button
+                      color="primary"
+                      size="sm"
+                      variant="flat"
+                      onPress={() => navigate(`/input-scores/${participant.address}`)}
+                    >
+                      ✏️ Input Scores
+                    </Button>
+                  )}
                 </div>
-              ))}
-            </div>
-          )}
-        </CardBody>
-      </Card>
+              </div>
+            ))}
+          </div>
+        )}
+      </CardWithHeader>
     </div>
   );
 };

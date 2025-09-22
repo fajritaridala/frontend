@@ -1,12 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { 
-  Card, 
-  CardBody, 
-  CardHeader, 
   Button, 
   Input, 
-  Divider,
   Progress,
   Modal,
   ModalContent,
@@ -14,13 +10,16 @@ import {
   ModalBody,
   ModalFooter,
   useDisclosure,
-  Spinner
 } from '@heroui/react';
 import api from '../utils/api';
 import { TOEFLRegistration, ScoreInput } from '../types';
 import { generateCertificatePDF } from '../utils/pdfGenerator';
 import { generateQRCode } from '../utils/qrGenerator';
 import { blockchainService } from '../utils/blockchain';
+import { PageHeader } from '../components/ui/PageHeader';
+import { Card, CardWithHeader } from '../components/ui/Card';
+import { LoadingSpinner } from '../components/ui/LoadingSpinner';
+import { StatusBadge } from '../components/ui/StatusBadge';
 
 const InputScores: React.FC = () => {
   const { address } = useParams<{ address: string }>();
@@ -159,120 +158,175 @@ const InputScores: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-64">
-        <Spinner size="lg" color="primary" />
-      </div>
+      <LoadingSpinner text="Loading participant data..." fullScreen />
     );
   }
 
   if (!participant) {
     return (
-      <div className="text-center">
-        <h1 className="text-2xl font-bold text-gray-900 mb-4">Participant Not Found</h1>
-        <Button color="primary" onPress={() => navigate('/participants')}>
-          Back to Participants
-        </Button>
+      <div className="space-y-6">
+        <PageHeader
+          title="Participant Not Found"
+          subtitle="The requested participant could not be found"
+        />
+        <Card className="text-center">
+          <div className="text-6xl mb-4">😕</div>
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">Participant Not Found</h2>
+          <p className="text-gray-600 mb-6">The participant you're looking for doesn't exist or has been removed.</p>
+          <Button color="primary" onPress={() => navigate('/participants')}>
+            ← Back to Participants
+          </Button>
+        </Card>
       </div>
     );
   }
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-4">
-        <Button
-          variant="light"
-          onPress={() => navigate('/participants')}
-        >
-          ← Back
-        </Button>
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Input Scores</h1>
-          <p className="text-gray-600">Input TOEFL scores for {participant.fullName}</p>
-        </div>
-      </div>
+      <PageHeader
+        title="Input Scores"
+        subtitle={`Input TOEFL scores for ${participant.fullName}`}
+        breadcrumbs={[
+          { label: 'Home' },
+          { label: 'Participants' },
+          { label: 'Input Scores' }
+        ]}
+        action={
+          <Button
+            variant="light"
+            onPress={() => navigate('/participants')}
+          >
+            ← Back to Participants
+          </Button>
+        }
+      />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Participant Info */}
         <div className="lg:col-span-1">
-          <Card className="card-shadow">
-            <CardHeader>
-              <h2 className="text-xl font-semibold">Participant Information</h2>
-            </CardHeader>
-            <Divider />
-            <CardBody className="space-y-4">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Full Name</p>
-                <p className="font-semibold">{participant.fullName}</p>
+          <CardWithHeader title="Participant Information">
+            <div className="space-y-6">
+              {/* Avatar and basic info */}
+              <div className="text-center">
+                <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <span className="text-white font-bold text-2xl">
+                    {participant.fullName.charAt(0)}
+                  </span>
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900">{participant.fullName}</h3>
+                <p className="text-sm text-gray-600">{participant.email}</p>
+                <div className="mt-2">
+                  <StatusBadge 
+                    status={participant.status === 'selesai' ? 'completed' : 'pending'}
+                  />
+                </div>
               </div>
-              <div>
-                <p className="text-sm font-medium text-gray-600">Email</p>
-                <p className="text-sm">{participant.email}</p>
+              
+              {/* Details */}
+              <div className="space-y-4">
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-lg">🎓</span>
+                    <span className="text-sm font-medium text-gray-600">Student ID</span>
+                  </div>
+                  <p className="font-mono text-sm bg-white px-2 py-1 rounded border">
+                    {participant.nim}
+                  </p>
+                </div>
+                
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-lg">📚</span>
+                    <span className="text-sm font-medium text-gray-600">Major</span>
+                  </div>
+                  <p className="text-sm">{participant.major}</p>
+                </div>
+                
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-lg">📅</span>
+                    <span className="text-sm font-medium text-gray-600">Test Session</span>
+                  </div>
+                  <p className="text-sm">{participant.sessionTest}</p>
+                </div>
+                
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-lg">🔗</span>
+                    <span className="text-sm font-medium text-gray-600">Wallet Address</span>
+                  </div>
+                  <p className="text-xs font-mono break-all bg-white px-2 py-1 rounded border">
+                    {participant.address}
+                  </p>
+                </div>
               </div>
-              <div>
-                <p className="text-sm font-medium text-gray-600">NIM</p>
-                <p className="font-mono text-sm">{participant.nim}</p>
-              </div>
-              <div>
-                <p className="text-sm font-medium text-gray-600">Major</p>
-                <p className="text-sm">{participant.major}</p>
-              </div>
-              <div>
-                <p className="text-sm font-medium text-gray-600">Session</p>
-                <p className="text-sm">{participant.sessionTest}</p>
-              </div>
-              <div>
-                <p className="text-sm font-medium text-gray-600">Wallet Address</p>
-                <p className="text-xs font-mono break-all">{participant.address}</p>
-              </div>
-            </CardBody>
-          </Card>
+            </div>
+          </CardWithHeader>
         </div>
 
         {/* Score Input */}
         <div className="lg:col-span-2">
-          <Card className="card-shadow">
-            <CardHeader>
-              <h2 className="text-xl font-semibold">TOEFL Scores</h2>
-            </CardHeader>
-            <Divider />
-            <CardBody className="space-y-6">
+          <CardWithHeader title="TOEFL Scores" subtitle="Enter the test scores for each section">
+            <div className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <Input
                   type="number"
-                  label="Listening"
+                  label="🎧 Listening"
                   placeholder="0"
                   min="0"
                   max="677"
                   value={scores.listening.toString()}
                   onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleScoreChange('listening', e.target.value)}
                   description="Score range: 0-677"
+                  classNames={{
+                    input: "text-center font-semibold",
+                    inputWrapper: "border-2 hover:border-blue-400 focus-within:border-blue-500"
+                  }}
                 />
                 <Input
                   type="number"
-                  label="Structure & Written Expression"
+                  label="✍️ Structure & Written Expression"
                   placeholder="0"
                   min="0"
                   max="677"
                   value={scores.swe.toString()}
                   onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleScoreChange('swe', e.target.value)}
                   description="Score range: 0-677"
+                  classNames={{
+                    input: "text-center font-semibold",
+                    inputWrapper: "border-2 hover:border-blue-400 focus-within:border-blue-500"
+                  }}
                 />
                 <Input
                   type="number"
-                  label="Reading"
+                  label="📖 Reading"
                   placeholder="0"
                   min="0"
                   max="677"
                   value={scores.reading.toString()}
                   onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleScoreChange('reading', e.target.value)}
                   description="Score range: 0-677"
+                  classNames={{
+                    input: "text-center font-semibold",
+                    inputWrapper: "border-2 hover:border-blue-400 focus-within:border-blue-500"
+                  }}
                 />
               </div>
 
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <div className="flex justify-between items-center">
-                  <span className="font-semibold text-blue-900">Total Score:</span>
-                  <span className="text-2xl font-bold text-blue-900">{getTotalScore()}</span>
+              {/* Total Score Display */}
+              <div className="bg-gradient-to-r from-blue-50 to-purple-50 border-2 border-blue-200 rounded-xl p-6">
+                <div className="text-center">
+                  <p className="text-sm font-medium text-gray-600 mb-2">Total TOEFL Score</p>
+                  <div className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600 mb-2">
+                    {getTotalScore()}
+                  </div>
+                  <div className="flex justify-center gap-4 text-sm text-gray-600">
+                    <span>Listening: {scores.listening}</span>
+                    <span>•</span>
+                    <span>SWE: {scores.swe}</span>
+                    <span>•</span>
+                    <span>Reading: {scores.reading}</span>
+                  </div>
                 </div>
               </div>
 
@@ -286,15 +340,17 @@ const InputScores: React.FC = () => {
                 </Button>
                 <Button
                   color="primary"
+                  size="lg"
                   onPress={handleSubmit}
                   isDisabled={getTotalScore() === 0}
                   isLoading={submitting}
+                  className="bg-gradient-to-r from-blue-500 to-purple-600 text-white font-semibold"
                 >
                   💾 Submit Scores
                 </Button>
               </div>
-            </CardBody>
-          </Card>
+            </div>
+          </CardWithHeader>
         </div>
       </div>
 
@@ -309,7 +365,10 @@ const InputScores: React.FC = () => {
           {(onClose) => (
             <>
               <ModalHeader className="flex flex-col gap-1">
-                Processing Scores
+                <div className="flex items-center gap-2">
+                  <span className="text-2xl">⚡</span>
+                  Processing Scores
+                </div>
               </ModalHeader>
               <ModalBody>
                 <div className="space-y-4">
@@ -317,6 +376,10 @@ const InputScores: React.FC = () => {
                     value={(processStep / (processSteps.length - 1)) * 100} 
                     color="primary"
                     size="md"
+                    classNames={{
+                      track: "drop-shadow-md border border-default",
+                      indicator: "bg-gradient-to-r from-blue-500 to-purple-600",
+                    }}
                   />
                   
                   <div className="space-y-2">
@@ -339,20 +402,25 @@ const InputScores: React.FC = () => {
                   </div>
 
                   {processStep === 7 && (
-                    <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                      <p className="text-green-800 font-medium mb-2">Success!</p>
+                    <div className="bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200 rounded-xl p-6">
+                      <div className="text-center mb-4">
+                        <div className="text-4xl mb-2">🎉</div>
+                        <p className="text-green-800 font-bold text-lg">Success!</p>
+                      </div>
                       <p className="text-sm text-green-700 mb-3">
                         Scores have been successfully processed and certificate has been generated.
                       </p>
                       {certificateUrl && (
-                        <Button
-                          size="sm"
-                          color="success"
-                          variant="flat"
-                          onPress={() => window.open(certificateUrl, '_blank')}
-                        >
-                          📥 Download Certificate
-                        </Button>
+                        <div className="text-center">
+                          <Button
+                            color="success"
+                            variant="flat"
+                            onPress={() => window.open(certificateUrl, '_blank')}
+                            className="font-semibold"
+                          >
+                            📥 Download Certificate
+                          </Button>
+                        </div>
                       )}
                     </div>
                   )}
@@ -361,7 +429,7 @@ const InputScores: React.FC = () => {
               {processStep === 7 && (
                 <ModalFooter>
                   <Button color="primary" onPress={handleClose}>
-                    Close
+                    ✅ Complete
                   </Button>
                 </ModalFooter>
               )}

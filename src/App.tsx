@@ -11,7 +11,7 @@ import ParticipantList from './pages/ParticipantList';
 import InputScores from './pages/InputScores';
 
 // Components
-import ProtectedRoute from './components/ProtectedRoute';
+import ProtectedRoute from './components/auth/ProtectedRoute';
 import Layout from './components/Layout';
 
 function App() {

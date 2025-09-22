@@ -1,8 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  Card, 
-  CardBody, 
-  CardHeader, 
   Table, 
   TableHeader, 
   TableColumn, 
@@ -12,11 +9,15 @@ import {
   Button,
   Input,
   Pagination,
-  Spinner
 } from '@heroui/react';
 import { useNavigate } from 'react-router-dom';
 import api from '../utils/api';
 import { TOEFLRegistration } from '../types';
+import { PageHeader } from '../components/ui/PageHeader';
+import { CardWithHeader } from '../components/ui/Card';
+import { LoadingSpinner } from '../components/ui/LoadingSpinner';
+import { EmptyState } from '../components/ui/EmptyState';
+import { StatusBadge } from '../components/ui/StatusBadge';
 
 const ParticipantList: React.FC = () => {
   const navigate = useNavigate();
@@ -92,37 +93,54 @@ const ParticipantList: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Participants</h1>
-        <p className="text-gray-600">Manage TOEFL test participants</p>
-      </div>
+      <PageHeader
+        title="Participants"
+        subtitle="Manage TOEFL test participants"
+        breadcrumbs={[
+          { label: 'Home' },
+          { label: 'Participants' }
+        ]}
+      />
 
-      <Card className="card-shadow">
-        <CardHeader className="px-6 py-4">
-          <div className="flex justify-between items-center w-full">
-            <div>
-              <h2 className="text-xl font-semibold text-gray-900">All Participants</h2>
-              <p className="text-sm text-gray-600">{total} total participants</p>
-            </div>
-            <div className="w-80">
-              <Input
-                placeholder="Search by name, NIM, or major..."
-                value={searchTerm}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleSearch(e.target.value)}
-                isClearable
-                onClear={() => handleSearch('')}
-              />
-            </div>
+      <CardWithHeader
+        title="All Participants"
+        subtitle={`${total} total participants`}
+        headerAction={
+          <div className="w-80">
+            <Input
+              placeholder="Search by name, NIM, or major..."
+              value={searchTerm}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleSearch(e.target.value)}
+              isClearable
+              onClear={() => handleSearch('')}
+              startContent={<span className="text-gray-400">🔍</span>}
+            />
           </div>
-        </CardHeader>
-        <CardBody className="p-0">
-          {loading ? (
-            <div className="flex justify-center items-center h-64">
-              <Spinner size="lg" color="primary" />
-            </div>
-          ) : (
-            <>
-              <Table aria-label="Participants table">
+        }
+      >
+        {loading ? (
+          <LoadingSpinner text="Loading participants..." />
+        ) : participants.length === 0 ? (
+          <EmptyState
+            icon="👥"
+            title="No participants found"
+            description={searchTerm ? "No participants match your search criteria." : "No participants have registered yet."}
+            action={searchTerm ? {
+              label: "Clear Search",
+              onClick: () => handleSearch('')
+            } : undefined}
+          />
+        ) : (
+          <div className="space-y-4">
+            <div className="overflow-x-auto">
+              <Table 
+                aria-label="Participants table"
+                classNames={{
+                  wrapper: "shadow-none",
+                  th: "bg-gray-50 text-gray-700 font-semibold",
+                  td: "py-4"
+                }}
+              >
                 <TableHeader>
                   <TableColumn>PARTICIPANT</TableColumn>
                   <TableColumn>NIM</TableColumn>
@@ -132,17 +150,26 @@ const ParticipantList: React.FC = () => {
                   <TableColumn>STATUS</TableColumn>
                   <TableColumn>ACTIONS</TableColumn>
                 </TableHeader>
-                <TableBody emptyContent="No participants found">
+                <TableBody>
                   {participants.map((participant) => (
-                    <TableRow key={participant.address}>
+                    <TableRow key={participant.address} className="hover:bg-gray-50">
                       <TableCell>
-                        <div>
-                          <p className="font-semibold text-gray-900">{participant.fullName}</p>
-                          <p className="text-sm text-gray-600">{participant.email}</p>
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+                            <span className="text-white font-semibold text-sm">
+                              {participant.fullName.charAt(0)}
+                            </span>
+                          </div>
+                          <div>
+                            <p className="font-semibold text-gray-900">{participant.fullName}</p>
+                            <p className="text-sm text-gray-600">{participant.email}</p>
+                          </div>
                         </div>
                       </TableCell>
                       <TableCell>
-                        <span className="font-mono text-sm">{participant.nim}</span>
+                        <span className="font-mono text-sm bg-gray-100 px-2 py-1 rounded">
+                          {participant.nim}
+                        </span>
                       </TableCell>
                       <TableCell>
                         <span className="text-sm">{participant.major}</span>
@@ -154,13 +181,10 @@ const ParticipantList: React.FC = () => {
                         <span className="text-sm">{formatDate(participant.testDate.toString())}</span>
                       </TableCell>
                       <TableCell>
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                          participant.status === 'selesai' 
-                            ? 'bg-green-100 text-green-800' 
-                            : 'bg-yellow-100 text-yellow-800'
-                        }`}>
-                          {getStatusText(participant.status)}
-                        </span>
+                        <StatusBadge 
+                          status={participant.status === 'selesai' ? 'completed' : 'pending'}
+                          size="sm"
+                        />
                       </TableCell>
                       <TableCell>
                         <div className="flex gap-2">
@@ -169,16 +193,16 @@ const ParticipantList: React.FC = () => {
                             variant="light"
                             color="primary"
                             onPress={() => {
-                              // Navigate to participant details
                               console.log('View participant:', participant.address);
                             }}
                           >
-                            👁️ View
+                            👁️
                           </Button>
                           {participant.status === 'belum selesai' && (
                             <Button
                               size="sm"
                               color="primary"
+                              variant="flat"
                               onPress={() => navigate(`/input-scores/${participant.address}`)}
                             >
                               ✏️ Input Scores
@@ -190,22 +214,27 @@ const ParticipantList: React.FC = () => {
                   ))}
                 </TableBody>
               </Table>
-              
-              {totalPages > 1 && (
-                <div className="flex justify-center py-4">
-                  <Pagination
-                    total={totalPages}
-                    page={currentPage}
-                    onChange={setCurrentPage}
-                    color="primary"
-                    showControls
-                  />
-                </div>
-              )}
-            </>
-          )}
-        </CardBody>
-      </Card>
+            </div>
+            
+            {totalPages > 1 && (
+              <div className="flex justify-center pt-4">
+                <Pagination
+                  total={totalPages}
+                  page={currentPage}
+                  onChange={setCurrentPage}
+                  color="primary"
+                  showControls
+                  classNames={{
+                    wrapper: "gap-0 overflow-visible h-8",
+                    item: "w-8 h-8 text-small rounded-none bg-transparent",
+                    cursor: "bg-gradient-to-b shadow-lg from-blue-500 to-blue-600 text-white font-bold"
+                  }}
+                />
+              </div>
+            )}
+          </div>
+        )}
+      </CardWithHeader>
     </div>
   );
 };
